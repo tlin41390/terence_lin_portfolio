@@ -7,7 +7,7 @@ terence@portfolio:~$ whoami
 terence_lin — Software Engineer
 ```
 
-Live site: **https://tlin41390.github.io**
+Live site: **https://tlin41390.github.io/terence_lin_portfolio/**
 
 ## About Me
 
@@ -67,7 +67,7 @@ npm run build:static   # exports the site to out/ (API routes excluded)
 - Email: [linterence4@gmail.com](mailto:linterence4@gmail.com)
 - LinkedIn: [terence-lin](https://www.linkedin.com/in/terence-lin-22b023197/)
 - GitHub: [tlin41390](https://github.com/tlin41390)
-- Or use the form at [/contact-me-server-form](https://tlin41390.github.io/contact-me-server-form/)
+- Or use the form at [/contact-me-server-form](https://tlin41390.github.io/terence_lin_portfolio/contact-me-server-form/)
 
 ---
 
