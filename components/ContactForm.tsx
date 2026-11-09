@@ -5,7 +5,10 @@ import { site } from "@/lib/site";
 
 const SUBJECTS = ["question", "feedback", "opportunity"] as const;
 
-const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT;
+const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT;
+const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
+
+const endpoint = formspreeEndpoint ?? (isStaticExport ? undefined : "/api/contact");
 
 type Status =
   | { state: "idle" }
@@ -38,16 +41,23 @@ export default function ContactForm() {
           },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          error?: string;
+        } | null;
+        if (!res.ok || !body?.ok) {
           setStatus({
             state: "error",
-            message: `endpoint returned ${res.status} — try again or email me directly`,
+            message: body?.error ?? `endpoint returned ${res.status}`,
           });
           return;
         }
         setStatus({
           state: "success",
-          detail: "message delivered — it lands in my Formspree inbox.",
+          detail:
+            endpoint === "/api/contact"
+              ? "message saved to data/submissions.json on the server."
+              : "message delivered — it lands in my Formspree inbox.",
         });
         form.reset();
       } catch {

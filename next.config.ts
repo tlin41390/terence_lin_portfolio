@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXT_PUBLIC_STATIC_EXPORT: process.env.STATIC_EXPORT === "true" ? "true" : "false",
   },
 };
 
