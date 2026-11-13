@@ -19,8 +19,9 @@ const ROUTES = [
   "/about-me",
   "/experience",
   "/projects",
+  "/blogs",
   "/resume",
-  "/contact-me-server-form",
+  "/contact-me",
   ...projects.map((p) => `/projects/${p.slug}`),
 ];
 
@@ -143,7 +144,7 @@ export default function Terminal() {
             { text: `${site.name} — ${site.role}`, kind: "ok" },
             { text: site.tagline, kind: "out" },
             { text: `location: ${site.location}`, kind: "out" },
-            { text: "try: ls, cd /about-me, cd /projects, cd /contact-me-server-form", kind: "dim" },
+            { text: "try: ls, cd /about-me, cd /projects, cd /contact-me", kind: "dim" },
           ];
         if (f === "resume.pdf")
           return (() => {
@@ -190,7 +191,7 @@ export default function Terminal() {
       name: "contact",
       desc: "jump to the contact form",
       run: () => {
-        navigate("/contact-me-server-form");
+        navigate("/contact-me");
         return [];
       },
     },

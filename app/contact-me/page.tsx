@@ -3,7 +3,7 @@ import { site } from "@/lib/site";
 import ContactForm from "@/components/ContactForm";
 
 export const metadata: Metadata = {
-  title: "~/contact-me-server-form",
+  title: "~/contact-me",
   description: `Contact ${site.name}.`,
 };
 
@@ -12,13 +12,12 @@ export default function ContactMe() {
     <div>
       <p className="prompt">
         {site.handle.toLowerCase()}@portfolio:
-        <span className="path">~/contact-me-server-form</span>$ ./submit --help
+        <span className="path">~/contact-me</span>$ ./contact --api
       </p>
       <h1>contact me</h1>
       <p className="dim">
-        live site: messages are delivered via <b>Formspree</b>. local dev: they
-        POST to <b>/api/contact</b> and are saved as JSON in{" "}
-        <b>data/submissions.json</b>.
+        this form POSTs to <b>/api/contacts</b> and every submission is saved
+        as JSON in <b>data/submissions.json</b>.
       </p>
       <ContactForm />
     </div>

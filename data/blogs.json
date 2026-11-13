@@ -1,0 +1,27 @@
+[
+    {
+        "id":  "3f8beb56-d612-40bb-a7ff-d429535daa81",
+        "slug":  "hello-world",
+        "title":  "Hello World",
+        "summary":  "Why I started writing about the things I build, and what to expect from this blog.",
+        "content":  "First post!\n\nI wanted a place to write about side projects, debugging adventures, and the occasional lesson learned the hard way.\n\nExpect posts about full-stack development, automation, and whatever else I am currently breaking and fixing.",
+        "tags":  [
+                     "meta",
+                     "welcome"
+                 ],
+        "createdAt":  "2026-11-12T22:03:02.088Z"
+    },
+    {
+        "id":  "5533cc7c-7b4c-4cd1-a66c-4db5de2ca598",
+        "slug":  "building-this-portfolio-with-next-js",
+        "title":  "Building This Portfolio with Next.js",
+        "summary":  "How this terminal-themed portfolio is built: Next.js App Router, server components, and a fake shell that actually navigates.",
+        "content":  "This site is a Next.js App Router project styled as a CRT terminal.\n\nThe fun part is the docked terminal emulator: it is a React client component that parses bash-like commands and uses the Next.js router for `cd`.\n\nUnder the hood every page is a server component fed by typed data modules in lib/, and the only runtime-write path is the contact API appending to JSON.",
+        "tags":  [
+                     "nextjs",
+                     "react",
+                     "typescript"
+                 ],
+        "createdAt":  "2026-11-12T22:03:02.118Z"
+    }
+]

@@ -138,7 +138,7 @@ export default function AboutMe() {
 ├── about-me/                  you are here
 ├── experience/                professional experience, documented
 ├── projects/                  project portfolio with detailed case studies
-├── contact-me-server-form/    send me a message (persisted server-side)
+├── contact-me/                  send me a message (persisted server-side)
 └── resume.pdf                 view / download my resume`}
       </pre>
 

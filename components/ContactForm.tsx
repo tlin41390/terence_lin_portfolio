@@ -8,8 +8,6 @@ const SUBJECTS = ["question", "feedback", "opportunity"] as const;
 const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT;
 const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === "true";
 
-const endpoint = formspreeEndpoint ?? (isStaticExport ? undefined : "/api/contact");
-
 type Status =
   | { state: "idle" }
   | { state: "submitting" }
@@ -18,6 +16,7 @@ type Status =
 
 export default function ContactForm() {
   const [status, setStatus] = useState<Status>({ state: "idle" });
+  const endpoint = formspreeEndpoint ?? (isStaticExport ? undefined : "/api/contacts");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,7 +54,7 @@ export default function ContactForm() {
         setStatus({
           state: "success",
           detail:
-            endpoint === "/api/contact"
+            endpoint.startsWith("/api/")
               ? "message saved to data/submissions.json on the server."
               : "message delivered — it lands in my Formspree inbox.",
         });

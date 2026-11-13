@@ -8,7 +8,7 @@ const quickCommands = [
   { href: "/projects", cmd: "ls /projects", desc: "see what I've built" },
   { href: "/resume", cmd: "open resume.pdf", desc: "view / download my resume" },
   {
-    href: "/contact-me-server-form",
+    href: "/contact-me",
     cmd: "./contact --message",
     desc: "send me a message",
   },

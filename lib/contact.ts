@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 const SUBJECTS = ["question", "feedback", "opportunity"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Submission = {
+export type Submission = {
   id: string;
   name: string;
   email: string;
@@ -19,7 +19,7 @@ function asString(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
-export async function POST(req: Request) {
+export async function handleContactPost(req: Request) {
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
