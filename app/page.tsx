@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { projects } from "@/lib/projects";
+import { readProjects } from "@/lib/projects";
 
 const quickCommands = [
   { href: "/about-me", cmd: "cd /about-me", desc: "learn who I am" },
@@ -14,7 +14,8 @@ const quickCommands = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const projects = await readProjects();
   return (
     <div>
       <section className="window">

@@ -19,6 +19,7 @@ export const sections = [
   { path: "/experience", label: "experience", type: "dir" as const },
   { path: "/projects", label: "projects", type: "dir" as const },
   { path: "/blogs", label: "blogs", type: "dir" as const },
+  { path: "/guestbook", label: "guestbook", type: "dir" as const },
   {
     path: "/contact-me",
     label: "contact-me",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { slugify, SLUG_RE } from "@/lib/slug";
 
 export type BlogPost = {
   id: string;
@@ -12,17 +13,6 @@ export type BlogPost = {
   tags: string[];
   createdAt: string;
 };
-
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80)
-    .replace(/^-+|-+$/g, "");
-}
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -67,17 +57,9 @@ export async function handleBlogsGet() {
   return NextResponse.json({ ok: true, blogs: sorted });
 }
 
-export async function handleBlogsPost(req: Request) {
-  let body: Record<string, unknown>;
-  try {
-    body = (await req.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "invalid JSON body" },
-      { status: 400 }
-    );
-  }
+type ParsedInput = { title: string; summary: string; content: string; tags: string[] };
 
+function parseBlogInput(body: Record<string, unknown>): ParsedInput | NextResponse {
   const title = asString(body.title);
   const summary = asString(body.summary);
   const content = asString(body.content);
@@ -113,9 +95,31 @@ export async function handleBlogsPost(req: Request) {
       { status: 400 }
     );
   }
+  return { title, summary, content, tags };
+}
+
+async function parseJsonBody(req: Request) {
+  try {
+    return (await req.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export async function handleBlogsPost(req: Request) {
+  const body = await parseJsonBody(req);
+  if (!body) {
+    return NextResponse.json(
+      { ok: false, error: "invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = parseBlogInput(body);
+  if (parsed instanceof NextResponse) return parsed;
 
   const rawSlug = asString(body.slug);
-  const slug = slugify(rawSlug || title);
+  const slug = slugify(rawSlug || parsed.title);
   if (!slug || !SLUG_RE.test(slug) || slug.length > 100) {
     return NextResponse.json(
       {
@@ -127,16 +131,7 @@ export async function handleBlogsPost(req: Request) {
     );
   }
 
-  let blogs: BlogPost[];
-  try {
-    blogs = await readBlogs();
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "could not save the post, try again later" },
-      { status: 500 }
-    );
-  }
-
+  const blogs = await readBlogs();
   if (blogs.some((b) => b.slug === slug)) {
     return NextResponse.json(
       { ok: false, error: `slug '${slug}' already exists` },
@@ -147,10 +142,10 @@ export async function handleBlogsPost(req: Request) {
   const post: BlogPost = {
     id: randomUUID(),
     slug,
-    title: title.slice(0, 200),
-    summary: summary.slice(0, 300),
-    content: content.slice(0, 50000),
-    tags: tags.map((t) => t.slice(0, 30)),
+    title: parsed.title.slice(0, 200),
+    summary: parsed.summary.slice(0, 300),
+    content: parsed.content.slice(0, 50000),
+    tags: parsed.tags.map((t) => t.slice(0, 30)),
     createdAt: new Date().toISOString(),
   };
 
@@ -167,4 +162,63 @@ export async function handleBlogsPost(req: Request) {
     { ok: true, id: post.id, slug: post.slug },
     { status: 201 }
   );
+}
+
+export async function handleBlogPut(slug: string, req: Request) {
+  const body = await parseJsonBody(req);
+  if (!body) {
+    return NextResponse.json(
+      { ok: false, error: "invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = parseBlogInput(body);
+  if (parsed instanceof NextResponse) return parsed;
+
+  try {
+    const blogs = await readBlogs();
+    const idx = blogs.findIndex((b) => b.slug === slug);
+    if (idx === -1) {
+      return NextResponse.json(
+        { ok: false, error: `no post with slug '${slug}'` },
+        { status: 404 }
+      );
+    }
+    blogs[idx] = {
+      ...blogs[idx],
+      title: parsed.title.slice(0, 200),
+      summary: parsed.summary.slice(0, 300),
+      content: parsed.content.slice(0, 50000),
+      tags: parsed.tags.map((t) => t.slice(0, 30)),
+    };
+    await writeBlogs(blogs);
+    return NextResponse.json({ ok: true, post: blogs[idx] });
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "could not save the post, try again later" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function handleBlogDelete(slug: string) {
+  try {
+    const blogs = await readBlogs();
+    const idx = blogs.findIndex((b) => b.slug === slug);
+    if (idx === -1) {
+      return NextResponse.json(
+        { ok: false, error: `no post with slug '${slug}'` },
+        { status: 404 }
+      );
+    }
+    blogs.splice(idx, 1);
+    await writeBlogs(blogs);
+    return NextResponse.json({ ok: true, remaining: blogs.length });
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "could not delete the post" },
+      { status: 500 }
+    );
+  }
 }

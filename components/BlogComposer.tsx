@@ -1,18 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blogs";
 
 type Status =
   | { state: "idle" }
   | { state: "submitting" }
-  | { state: "success"; slug: string }
+  | { state: "success"; message: string }
   | { state: "error"; message: string };
 
 export default function BlogComposer() {
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const [posts, setPosts] = useState<BlogPost[] | null>(null);
+  const [editing, setEditing] = useState<BlogPost | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const loadPosts = useCallback(async () => {
     try {
@@ -36,6 +38,53 @@ export default function BlogComposer() {
     loadPosts();
   }, [loadPosts]);
 
+  function setFieldValue(name: string, value: string) {
+    const el = formRef.current?.elements.namedItem(name);
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      el.value = value;
+    }
+  }
+
+  function startEdit(post: BlogPost) {
+    setEditing(post);
+    setStatus({ state: "idle" });
+    setFieldValue("title", post.title);
+    setFieldValue("slug", post.slug);
+    setFieldValue("summary", post.summary);
+    setFieldValue("tags", post.tags.join(", "));
+    setFieldValue("content", post.content);
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setStatus({ state: "idle" });
+    formRef.current?.reset();
+  }
+
+  async function deletePost(post: BlogPost) {
+    if (!window.confirm(`delete '${post.slug}'? this cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/blogs/${encodeURIComponent(post.slug)}`, {
+        method: "DELETE",
+      });
+      const body = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+      if (!res.ok || !body?.ok) {
+        setStatus({
+          state: "error",
+          message: body?.error ?? `endpoint returned ${res.status}`,
+        });
+        return;
+      }
+      if (editing?.slug === post.slug) cancelEdit();
+      loadPosts();
+    } catch {
+      setStatus({ state: "error", message: "network error: could not reach the server" });
+    }
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -50,27 +99,37 @@ export default function BlogComposer() {
 
     setStatus({ state: "submitting" });
     try {
-      const res = await fetch("/api/blogs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        editing ? `/api/blogs/${encodeURIComponent(editing.slug)}` : "/api/blogs",
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       const body = (await res.json().catch(() => null)) as {
         ok?: boolean;
         slug?: string;
         error?: string;
       } | null;
-      if (!res.ok || !body?.ok || !body.slug) {
+      if (!res.ok || !body?.ok) {
         setStatus({
           state: "error",
           message: body?.error ?? `endpoint returned ${res.status}`,
         });
         return;
       }
-      setStatus({ state: "success", slug: body.slug });
+      const slug = editing ? editing.slug : body.slug ?? "";
+      setStatus({
+        state: "success",
+        message: editing
+          ? `post updated — view it at /blogs/${slug}`
+          : `post saved to data/blogs.json — view it at /blogs/${slug}`,
+      });
+      setEditing(null);
       form.reset();
       loadPosts();
     } catch {
@@ -83,7 +142,7 @@ export default function BlogComposer() {
 
   return (
     <div>
-      <form className="termform" onSubmit={onSubmit}>
+      <form ref={formRef} className="termform" onSubmit={onSubmit}>
         <div>
           <label htmlFor="title">title</label>
           <input
@@ -96,13 +155,16 @@ export default function BlogComposer() {
           />
         </div>
         <div>
-          <label htmlFor="slug">slug (optional — derived from title)</label>
+          <label htmlFor="slug">
+            slug (optional — derived from title{editing ? ", locked while editing" : ""})
+          </label>
           <input
             id="slug"
             name="slug"
             type="text"
             maxLength={100}
             placeholder="how-i-built-this-portfolio"
+            disabled={editing !== null}
           />
         </div>
         <div>
@@ -140,15 +202,19 @@ export default function BlogComposer() {
           type="submit"
           disabled={status.state === "submitting"}
         >
-          {status.state === "submitting" ? "publishing…" : "publish ▶"}
+          {status.state === "submitting"
+            ? "publishing…"
+            : editing
+              ? "save changes ✓"
+              : "publish ▶"}
         </button>
-
-        {status.state === "success" && (
-          <p className="ok">
-            exit code 0 — post saved to data/blogs.json. view it at{" "}
-            <Link href={`/blogs/${status.slug}`}>/blogs/{status.slug}</Link>
-          </p>
+        {editing && (
+          <button className="btn" type="button" onClick={cancelEdit}>
+            cancel ✕
+          </button>
         )}
+
+        {status.state === "success" && <p className="ok">{status.message}</p>}
         {status.state === "error" && <p className="err">{status.message}</p>}
       </form>
 
@@ -165,7 +231,23 @@ export default function BlogComposer() {
               <span className="dim">
                 {" "}
                 — {p.title} · {new Date(p.createdAt).toLocaleDateString()}
-              </span>
+              </span>{" "}
+              <button
+                type="button"
+                className="btn"
+                style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem" }}
+                onClick={() => startEdit(p)}
+              >
+                edit
+              </button>{" "}
+              <button
+                type="button"
+                className="btn"
+                style={{ fontSize: "0.75rem", padding: "0.15rem 0.6rem" }}
+                onClick={() => deletePost(p)}
+              >
+                rm
+              </button>
             </li>
           ))}
         </ul>

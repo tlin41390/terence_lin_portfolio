@@ -1,19 +1,13 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
+import {
+  readSubmissions,
+  writeSubmissions,
+  type Submission,
+} from "@/lib/submissions";
 
 const SUBJECTS = ["question", "feedback", "opportunity"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export type Submission = {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  submittedAt: string;
-};
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -69,24 +63,14 @@ export async function handleContactPost(req: Request) {
     email: email.slice(0, 200),
     subject: subject.slice(0, 40),
     message: message.slice(0, 5000),
+    read: false,
     submittedAt: new Date().toISOString(),
   };
 
   try {
-    const dir = path.join(process.cwd(), "data");
-    const file = path.join(dir, "submissions.json");
-    await fs.mkdir(dir, { recursive: true });
-
-    let submissions: Submission[] = [];
-    try {
-      const parsed: unknown = JSON.parse(await fs.readFile(file, "utf8"));
-      if (Array.isArray(parsed)) submissions = parsed;
-    } catch {
-      submissions = [];
-    }
-
+    const submissions = await readSubmissions();
     submissions.push(submission);
-    await fs.writeFile(file, JSON.stringify(submissions, null, 2), "utf8");
+    await writeSubmissions(submissions);
   } catch {
     return NextResponse.json(
       { ok: false, error: "could not save your message, try again later" },

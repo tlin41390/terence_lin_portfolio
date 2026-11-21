@@ -2,21 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { site } from "@/lib/site";
-import { projects, getProject } from "@/lib/projects";
+import { readProjects, getProject } from "@/lib/projects";
+import type { Project } from "@/lib/projectTypes";
 
-type Params = { slug: string };
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const projects = await readProjects();
+  if (projects.length === 0) return [{ slug: "_placeholder" }];
   return projects.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<Params>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProject(slug);
+  const projects = await readProjects();
+  const project = getProject(projects, slug);
   if (!project) return { title: "~/projects/404" };
   return {
     title: `~/projects/${project.slug}`,
@@ -27,12 +29,16 @@ export async function generateMetadata({
 export default async function ProjectPage({
   params,
 }: {
-  params: Promise<Params>;
+  params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = getProject(slug);
+  const projects = await readProjects();
+  const project = getProject(projects, slug);
   if (!project) notFound();
+  return <ProjectView project={project} />;
+}
 
+function ProjectView({ project }: { project: Project }) {
   return (
     <div>
       <p className="prompt">

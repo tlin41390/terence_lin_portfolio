@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { projects } from "@/lib/projects";
+import { readProjects } from "@/lib/projects";
 
 export const metadata: Metadata = {
   title: "~/projects",
   description: `Projects by ${site.name}.`,
 };
 
-export default function Projects() {
+export default async function Projects() {
+  const projects = await readProjects();
   return (
     <div>
       <p className="prompt">

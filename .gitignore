@@ -21,9 +21,14 @@ server.log
 # debug
 npm-debug.log*
 
+# env secrets
+.env
+.env*.local
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# contact form data store (runtime-generated)
+# runtime data stores (visitor-generated)
 /data/submissions.json
+/data/guestbook.json
